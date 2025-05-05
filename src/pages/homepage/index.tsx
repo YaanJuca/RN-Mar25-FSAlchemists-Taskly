@@ -1,22 +1,30 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
-import { Avatar } from 'react-native-paper';
+import { View, Text, TouchableOpacity, Image } from 'react-native';
+import styles from './style';
 
-export default function HomeScreen() {
+export default function HomeScreen({ navigation }) {
   return (
     <View style={styles.container}>
+      
       <View style={styles.header}>
         <Text style={styles.title}>TASKLY</Text>
-        <Avatar.Image 
-          size={40} 
-          source={{ uri: '3067848-icone-expressivo-de-sorriso-triste-de-desenho-animado-no-estilo-plano-gratis-vetor.jpg' }} 
+        <Image
+          source={require('../../assets/imgs/avatar.png')}
+          style={styles.logo3}
         />
       </View>
 
+      
       <View style={styles.content}>
-        <Text style={styles.emoji}>😞</Text>
+        <Image
+          source={require('../../assets/imgs/Vector.png')}
+          style={styles.logo1}
+        />
         <Text style={styles.message}>No momento você não possui tarefa</Text>
-        <TouchableOpacity style={styles.button}>
+
+        <TouchableOpacity
+          style={styles.button}
+        >
           <Text style={styles.buttonText}>Criar Tarefa</Text>
         </TouchableOpacity>
       </View>
