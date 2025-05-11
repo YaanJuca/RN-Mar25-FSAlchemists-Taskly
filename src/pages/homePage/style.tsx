@@ -5,7 +5,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8F7FA',
     paddingTop: 50,
-    paddingHorizontal: 20,
+    paddingHorizontal: 30,
   },
   header: {
     flexDirection: 'row',
@@ -14,7 +14,7 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   title: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#000',
     width: 85,
@@ -29,6 +29,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     flex: 1,
+  },
+  conticon:{
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  icon:{
+    width:24,
+    height:24,
+    marginBottom: -30,
+    marginRight: 3,
   },
   logo1: {
     width: 150,
@@ -50,7 +60,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 8,
-    marginTop: 20,
+    marginTop: 80,
   },
   buttonText: {
     color: "#FFFF",
