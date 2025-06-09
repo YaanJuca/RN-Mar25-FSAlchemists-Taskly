@@ -158,6 +158,14 @@ const ProfileScreen: React.FC = () => {
       Alert.alert("Erro", "Ocorreu um erro ao excluir sua conta.");
     }
   };
+  try {
+      const response = await fetch('http://18.231.154.135:3000', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, senha })
+      });
 
   useFocusEffect(
     useCallback(() => {

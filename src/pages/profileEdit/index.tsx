@@ -92,6 +92,14 @@ const ProfileEdit: React.FC = () => {
         }
       }
     };
+    try {
+      const response = await fetch('http://18.231.154.135:3000', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, senha })
+      });
 
     carregarDadosUsuario();
   }, []);
@@ -125,6 +133,7 @@ const ProfileEdit: React.FC = () => {
           keyboardType="email-address"
         />
         {(!isFormValid && !isEmailValid(email)) && <Text style={styles.errorText}>Error aqui</Text>}
+        
 
         <Text style={styles.label}>Número</Text>
         <TextInput
@@ -137,6 +146,7 @@ const ProfileEdit: React.FC = () => {
         />
         {(!isFormValid && !isPhoneNumberValid(phoneNumber)) && <Text style={styles.errorText}>Error aqui</Text>}
       </View>
+      
 
       <TouchableOpacity onPress={handleContinueButton} style={styles.continueButton}>
         <Text style={styles.continueButtonText}>CONTINUAR</Text>
