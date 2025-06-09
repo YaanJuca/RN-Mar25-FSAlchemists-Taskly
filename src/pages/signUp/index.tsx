@@ -1,192 +1,316 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Alert
-} from "react-native";
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, Text, Image, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import useStyles from './style';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useTheme } from '../../pages/preferencesMenu/themeContext'; 
+
+import LogoutConfirmationModal from '../../components/common/LogoutConfirmationModal';
+import ToggleBiometricsModal from '../../components/common/ToggleBiometricsModal';
+import AccountDeletionModal from '../../components/common/AccountDeletionModal';
+
+import UserIconDark from '../../assets/icons/User.png';
+import UserIconLight from '../../assets/icons/UserLight.png';
+import FingerprintIconDark from '../../assets/icons/menu/FingerprintSimple.png';
+import FingerprintIconLight from '../../assets/icons/menu/FingerprintSimpleLight.png';
+import LogoutIconDark from '../../assets/icons/menu/SignOut.png';
+import LogoutIconLight from '../../assets/icons/menu/SignOutLight.png';
+import ChevronRightIcon from '../../assets/icons/ChevronRight.png';
+import DeleteAccIconDark from '../../assets/icons/menu/Trash.png';
+import DeleteAccIconLight from '../../assets/icons/TrashLight.png';
+import ProfileImage from '../../assets/imgs/avatar.png';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from "@react-navigation/native";
 
-import { styles } from "./style";
-import ModalBiometrics from "../../components/common/modalBiometrics";
+    const getProfileImage = (pictureId: string | null): string => {
+  switch (pictureId) {
+    case 'avatar_1': return 'https://img-teskly.s3.us-east-2.amazonaws.com/img/Ellipse%201.png';
+    case 'avatar_2': return 'https://img-teskly.s3.us-east-2.amazonaws.com/img/Ellipse%202.png';
+    case 'avatar_3': return 'https://img-teskly.s3.us-east-2.amazonaws.com/img/Ellipse%203.png';
+    case 'avatar_4': return 'https://img-teskly.s3.us-east-2.amazonaws.com/img/Ellipse%204.png';
+    case 'avatar_5': return 'https://img-teskly.s3.us-east-2.amazonaws.com/img/Ellipse%205.png';
+    default: return Image.resolveAssetSource(require('../../assets/imgs/avatar.png')).uri;
+  }
+};
+const formatPhoneNumber = (phoneNumber: string) => {
+  if (!phoneNumber) {
+    return '';
+  }
+  const cleaned = ('' + phoneNumber).replace(/\D/g, '');
+  const match = cleaned.match(/^(\d{2})(\d{5})(\d{4})$/);
+  if (match) {
+    return `(${match[1]}) ${match[2]} - ${match[3]}`;
+  }
+  return cleaned;
+};
 
-export default function SingUp() {
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const openModal = () => setIsModalVisible(true);
-  const closeModal = () => setIsModalVisible(false);
-
-  const [nome, setNome] = useState("");
-  const [email, setEmail] = useState("");
-  const [numero, setNumero] = useState("");
-  const [senha, setSenha] = useState("");
-  const [cSenha, setCSenha] = useState("");
-
-  const [erroNome, setErroNome] = useState("");
-  const [erroEmail, setErroEmail] = useState("");
-  const [erroNumero, setErroNumero] = useState("");
-  const [erroSenha, setErroSenha] = useState("");
-  const [erroCSenha, setErroCSenha] = useState("");
-
-  const [isSenhaVisible, setIsSenhaVisible] = useState(false);
-  const [isCSenhaVisible, setIsCSenhaVisible] = useState(false);
-
+const ProfileScreen: React.FC = () => {
   const navigation = useNavigation();
+  const styles = useStyles(); 
+  const { currentThemeName } = useTheme(); 
+  const [isLogoutConfirmationModalVisible, setIsLogoutConfirmationModalVisible] = useState(false);
+  const [isBiometricModalVisible, setIsBiometricModalVisible] = useState(false);
+  const [isBiometricEnabled, setIsBiometricEnabled] = useState(false);
+  const [isAccountDeletionModalVisible, setIsAccountDeletionModalVisible] = useState(false);
+  const [usuario, setUsuario] = useState({ nome: '', email: '', numero: '',picture:'' });
 
-  const users = async () => {
-    let hasError = false;
 
-    if (nome.trim().split(" ").length < 2) {
-      setErroNome("Digite seu nome e sobrenome");
-      hasError = true;
+  const getIcon = (iconName: string) => {
+    if (currentThemeName === 'dark') {
+      switch (iconName) {
+        case 'user':
+          return UserIconDark;
+        case 'fingerprint':
+          return FingerprintIconDark;
+        case 'logout':
+          return LogoutIconDark;
+        case 'delete':
+          return DeleteAccIconDark;
+        default:
+          return null;
+      }
     } else {
-      setErroNome("");
+      switch (iconName) {
+        case 'user':
+          return UserIconLight;
+        case 'fingerprint':
+          return FingerprintIconLight;
+        case 'logout':
+          return LogoutIconLight;
+        case 'delete':
+          return DeleteAccIconLight;
+        default:
+          return null; 
+      }
     }
+  };
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setErroEmail("Digite um e-mail válido");
-      hasError = true;
-    } else {
-      setErroEmail("");
-    }
+  const handleEditProfilePress = () => {
+    navigation.navigate('profileEdit');
+  };
 
-    if (numero.replace(/\D/g, "").length < 11) {
-      setErroNumero("Digite o número com o DDD");
-      hasError = true;
-    } else {
-      setErroNumero("");
-    }
+  const handlePreferencesPress = () => {
+    navigation.navigate('PreferencesMenu');
+  };
 
-    if (senha.length < 8) {
-      setErroSenha("A senha precisa ter no mínimo 8 caracteres");
-      hasError = true;
-    } else {
-      setErroSenha("");
-    }
+  const handleLogoutPress = () => {
+    setIsLogoutConfirmationModalVisible(true);
+  };
 
-    if (senha !== cSenha) {
-      setErroCSenha("As senhas não coincidem!");
-      hasError = true;
-    } else {
-      setErroCSenha("");
-    }
+  const handleCancelLogout = () => {
+    setIsLogoutConfirmationModalVisible(false);
+  };
 
-    if (hasError) return;
-
+  const handleConfirmLogout = async () => {
     try {
-      const storedUsers = await AsyncStorage.getItem('users');
-      const parsedUsers = storedUsers ? JSON.parse(storedUsers) : [];
+      await AsyncStorage.removeItem("loggedUserEmail");
+      await AsyncStorage.removeItem("loggedUserNome");
+      await AsyncStorage.removeItem("loggedUserNumero");
 
-      console.log(storedUsers)
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'SingIn' }],
+      });
+    } catch (error) {
+      console.error('Erro ao sair da conta:', error);
+      Alert.alert("Erro", "Ocorreu um erro ao deslogar.");
+    }
+  };
 
-      const emailExists = parsedUsers.some(user => user.email === email);
-      if (emailExists) {
-        setErroEmail("Esse e-mail já está cadastrado!");
+  const handleOpenBiometricModal = () => setIsBiometricModalVisible(true);
+  const handleCloseBiometricModal = () => setIsBiometricModalVisible(false);
+
+  const handleConfirmBiometricChange = (newState: boolean) => {
+    setIsBiometricEnabled(newState);
+    setIsBiometricModalVisible(false);
+  };
+
+  const handleOpenDeleteAccountModal = () => setIsAccountDeletionModalVisible(true);
+  const handleCloseDeleteAccountModal = () => setIsAccountDeletionModalVisible(false);
+
+  const handleConfirmDeleteAccount = async () => {
+  try {
+    const token = await AsyncStorage.getItem("authToken");
+
+    if (!token) {
+      Alert.alert("Erro", "Você não está autenticado.");
+      return;
+    }
+
+    const response = await fetch("http://18.231.154.135:3000/profile/delete-account", {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      }
+    });
+
+    if (!response.ok) {
+      console.error("Erro ao deletar conta:", await response.text());
+      Alert.alert("Erro", "Não foi possível excluir sua conta.");
+      return;
+    }
+
+    await AsyncStorage.clear();
+
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'SingIn' }],
+    });
+
+    setIsAccountDeletionModalVisible(false);
+    Alert.alert("Conta excluída", "Sua conta foi excluída com sucesso.");
+
+  } catch (error) {
+    console.error("Erro ao excluir a conta:", error);
+    Alert.alert("Erro interno", "Não foi possível excluir sua conta.");
+  }
+};
+
+
+  useFocusEffect(
+    useCallback(() => {      
+      const carregarUsuario = async () => {
+      const token = await AsyncStorage.getItem("authToken");
+
+      if (!token) {
+        Alert.alert("Erro", "Usuário não autenticado.");
         return;
       }
 
-      const newUser = {
-        id: Date.now(),
-        nome,
-        email,
-        numero,
-        senha,
-      };
+      try {
+  console.log("🧪 TOKEN LIDO DO STORAGE:", token);
 
-      const updatedUsers = [...parsedUsers, newUser];
-      await AsyncStorage.setItem('users', JSON.stringify(updatedUsers));
+  if (!token) {
+    Alert.alert("Erro", "Você não está autenticado.");
+    return;
+  }
 
-      
-      await AsyncStorage.setItem("loggedUserEmail", email);
-      await AsyncStorage.setItem("loggedUserNome", nome);
-      await AsyncStorage.setItem("loggedUserNumero", numero);
+  const response = await fetch("http://18.231.154.135:3000/profile", {
+  method: "GET",
+  headers: {
+    Authorization: `Bearer ${token}`,
+  },
+});
 
-      setNome("");
-      setEmail("");
-      setNumero("");
-      setSenha("");
-      setCSenha("");
+if (!response.ok) {
+  const text = await response.text();
+  console.error("Erro ao buscar perfil:", text);
+  Alert.alert("Erro", "Não foi possível carregar os dados.");
+  return;
+}
 
-      openModal();
+const data = await response.json();
 
-      setTimeout(() => {
-        closeModal();
-        navigation.navigate("avatarSelect");
-      }, 1500);
+// Verificação defensiva
+if (!data?.name || !data?.email || !data?.phone_number) {
+  console.error("Resposta inesperada do backend:", data);
+  Alert.alert("Erro", "Dados incompletos recebidos.");
+  return;
+}
 
-    } catch (error) {
-      Alert.alert("Erro ao salvar dados!");
-      console.error(error);
-    }
+setUsuario({
+  nome: data.name,
+  email: data.email,
+  numero: data.phone_number,
+  picture: data.picture,
+});
+} catch (error) {
+  console.error("Erro ao buscar dados do usuário:", error);
+  Alert.alert("Erro interno", "Falha ao carregar dados.");
+}
+    };      
+      carregarUsuario();
+    }, [])
+  );
+
+  const handleTermsAndConditionsPress = () => {
+    navigation.navigate('WebView', {
+      url: 'https://sobreuol.noticias.uol.com.br/normas-de-seguranca-e-privacidade/en/',
+    });
   };
 
   return (
     <View style={styles.container}>
-      <View style={styles.cont}>
-        <Text style={styles.txth1}>CADASTRO</Text>
-
-        <Text style={styles.label}>Nome Completo</Text>
-        <TextInput
-          style={styles.txtinput}
-          placeholder="Ex: João Gabriel"
-          value={nome}
-          onChangeText={setNome}
-        />
-        <Text style={styles.txterro}>{erroNome}</Text>
-
-        <Text style={styles.label}>E-mail</Text>
-        <TextInput
-          style={styles.txtinput}
-          placeholder="example@example.com"
-          value={email}
-          onChangeText={setEmail}
-        />
-        <Text style={styles.txterro}>{erroEmail}</Text>
-
-        <Text style={styles.label}>Número</Text>
-        <TextInput
-          style={styles.txtinput}
-          placeholder="(DDD) 9 NNNN-NNNN"
-          keyboardType="numeric"
-          value={numero}
-          onChangeText={(text) => setNumero(text.replace(/[^0-9]/g, ''))}
-          maxLength={11}
-        />
-        <Text style={styles.txterro}>{erroNumero}</Text>
-
-        <Text style={styles.label}>Senha</Text>
-        <TextInput
-          style={styles.txtinput}
-          placeholder="* * * * * * * *"
-          value={senha}
-          onChangeText={setSenha}
-          secureTextEntry={!isCSenhaVisible}
-          maxLength={8}
-        />       
-        <Text style={styles.txterro}>{erroSenha}</Text>
-
-        <Text style={styles.label}>Confirmar Senha</Text>
-        <TextInput
-          style={styles.txtinput}
-          placeholder="* * * * * * * *"
-          value={cSenha}
-          onChangeText={setCSenha}
-          secureTextEntry={!isCSenhaVisible}
-          maxLength={8}
-        />
-        <TouchableOpacity onPress={() => setIsCSenhaVisible(!isCSenhaVisible)}>
-          <Text>{isCSenhaVisible ? "Ocultar senha" : "Ver senha"}</Text>
-        </TouchableOpacity>
-        <Text style={styles.txterro}>{erroCSenha}</Text>
-
-        <TouchableOpacity style={styles.btn} onPress={users}>
-          <Text style={styles.txtbtn}>CRIAR CONTA</Text>
-        </TouchableOpacity>
-
-        <ModalBiometrics visible={isModalVisible} onClose={closeModal} />
+      <View style={styles.header}>
+        <View style={styles.avatarContainer}>
+          <Image
+            source={{ uri: getProfileImage(usuario.picture || '') }}
+            style={styles.avatar}
+          />
+        </View>
+        <Text style={styles.name}>{usuario.nome}</Text>
+        <Text style={styles.email}>{usuario.email}</Text>
+        <Text style={styles.phone}>{formatPhoneNumber(usuario.numero)}</Text>
       </View>
+
+      <ScrollView
+        style={styles.actionsScrollView}
+        horizontal={true}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.actionsContainer}
+      >
+        <TouchableOpacity style={styles.actionButton} onPress={handleEditProfilePress}>
+          <View style={styles.actionContent}>
+            <Text style={styles.actionText}>Editar Informações Pessoais</Text>
+            <Image source={getIcon('user')} style={styles.actionIcon} />
+          </View>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.actionButton} onPress={handleOpenBiometricModal}>
+          <View style={styles.actionContent}>
+            <Text style={styles.actionText}>Mudar Biometria</Text>
+            <Image source={getIcon('fingerprint')} style={styles.actionIcon} />
+          </View>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.actionButton} onPress={handleLogoutPress}>
+          <View style={styles.actionContent}>
+            <Text style={styles.actionText}>Sair da Conta</Text>
+            <Image source={getIcon('logout')} style={styles.actionIcon} />
+          </View>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.actionButton} onPress={handleOpenDeleteAccountModal}>
+          <View style={styles.actionContent}>
+            <Text style={styles.actionText}>Excluir Conta</Text>
+            <Image source={getIcon('delete')} style={styles.actionIcon} />
+          </View>
+        </TouchableOpacity>
+      </ScrollView>
+
+      <View style={styles.menuContainer}>
+        <TouchableOpacity style={styles.menuItem} onPress={handlePreferencesPress}>
+          <Text style={styles.menuText}>Preferências</Text>
+          <Image source={ChevronRightIcon} style={styles.menuIcon} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.menuItem} onPress={handleTermsAndConditionsPress}>
+          <Text style={styles.menuText}>Termos e regulamentos</Text>
+          <Image source={ChevronRightIcon} style={styles.menuIcon} />
+        </TouchableOpacity>
+      </View>
+
+      {isLogoutConfirmationModalVisible && (
+        <LogoutConfirmationModal
+          isVisible={isLogoutConfirmationModalVisible}
+          onCancel={handleCancelLogout}
+          onConfirm={handleConfirmLogout}
+        />
+      )}
+
+      {isBiometricModalVisible && (
+        <ToggleBiometricsModal
+          isVisible={isBiometricModalVisible}
+          isBiometricEnabled={isBiometricEnabled}
+          onCancel={handleCloseBiometricModal}
+          onConfirm={handleConfirmBiometricChange}
+        />
+      )}
+
+      {isAccountDeletionModalVisible && (
+        <AccountDeletionModal
+          isVisible={isAccountDeletionModalVisible}
+          onCancel={handleCloseDeleteAccountModal}
+          onConfirm={handleConfirmDeleteAccount}
+        />
+      )}
     </View>
   );
-}
+};
+
+export default ProfileScreen;
